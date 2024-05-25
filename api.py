@@ -23,7 +23,7 @@ def get_cars():
     cur.close()
     return make_response(jsonify(data), 200)
 
-@app.route("/manufacturers/<int:id>", methods=["GET"])
+@app.route("/cars/<int:id>", methods=["GET"])
 def get_cars_by_manufacturer(id):
     cur = mysql.connection.cursor()
     query = "SELECT * FROM cars WHERE car_id = %s;"
