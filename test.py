@@ -16,9 +16,9 @@ class MyAppTests(unittest.TestCase):
         self.assertEqual(response.data.decode(), "<p>Hello, World!</p>")
 
     def test_getactors(self):
-        response = self.app.get("/customers")
+        response = self.app.get("/cars")
         self.assertEqual(response.status_code, 200)
-        self.assertTrue("54, rue Royale" in response.data.decode())
+        self.assertTrue("Camry" in response.data.decode())
 
    
 
