@@ -15,12 +15,16 @@ class MyAppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data.decode(), "<p>Hello, World!</p>")
 
-    def test_getactors(self):
+    def test_getcars(self):
         response = self.app.get("/cars")
         self.assertEqual(response.status_code, 200)
         self.assertTrue("Camry" in response.data.decode())
 
-   
+    def test_getcars_by_id(self):
+        response = self.app.get("/cars/3")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue("Mustang" in response.data.decode())
+
 
 if __name__ == "__main__":
     unittest.main()
