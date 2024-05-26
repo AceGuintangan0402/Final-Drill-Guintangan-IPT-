@@ -1,5 +1,7 @@
 from flask import Flask, make_response, jsonify, request
 from flask_mysqldb import MySQL
+from flask_httpauth import HTTPBasicAuth
+import dicttoxml
 
 app = Flask(__name__)
 app.config["MYSQL_HOST"] = "localhost"
@@ -9,14 +11,30 @@ app.config["MYSQL_DB"] = "cars"
 app.config["MYSQL_CURSORCLASS"] = "DictCursor"
 
 mysql = MySQL(app)
+auth = HTTPBasicAuth()
 
+# User data storage for demonstration
+users = {
+    "user1": "password1",
+    "user2": "password2"
+}
+
+@auth.verify_password
+def verify_password(username, password):
+    if username in users and users[username] == password:
+        return username
+    return None
+
+def convert_to_xml(data):
+    xml = dicttoxml.dicttoxml(data, custom_root='response', attr_type=False)
+    return xml
 
 @app.route("/")
 def hello_world():
     return "<p>Hello, World!</p>"
 
-
 @app.route("/cars", methods=["GET", "POST"])
+@auth.login_required
 def manage_cars():
     if request.method == "GET":
         cur = mysql.connection.cursor()
@@ -24,7 +42,15 @@ def manage_cars():
         cur.execute(query)
         data = cur.fetchall()
         cur.close()
-        return make_response(jsonify(data), 200)
+
+        response_format = request.args.get('format', 'json')
+        if response_format == 'xml':
+            response = make_response(convert_to_xml(data), 200)
+            response.headers['Content-Type'] = 'application/xml'
+        else:
+            response = make_response(jsonify(data), 200)
+            response.headers['Content-Type'] = 'application/json'
+        return response
     elif request.method == "POST":
         car = request.json
         cur = mysql.connection.cursor()
@@ -34,10 +60,19 @@ def manage_cars():
         )
         mysql.connection.commit()
         cur.close()
-        return make_response(jsonify({"message": "Car added successfully"}), 201)
 
+        response_data = {"message": "Car added successfully"}
+        response_format = request.args.get('format', 'json')
+        if response_format == 'xml':
+            response = make_response(convert_to_xml(response_data), 201)
+            response.headers['Content-Type'] = 'application/xml'
+        else:
+            response = make_response(jsonify(response_data), 201)
+            response.headers['Content-Type'] = 'application/json'
+        return response
 
-@app.route("/cars/<int:id>", methods=["GET", "PUT","DELETE"])
+@app.route("/cars/<int:id>", methods=["GET", "PUT", "DELETE"])
+@auth.login_required
 def manage_car_by_id(id):
     if request.method == "GET":
         cur = mysql.connection.cursor()
@@ -45,10 +80,24 @@ def manage_car_by_id(id):
         cur.execute(query, (id,))
         data = cur.fetchone()
         cur.close()
+
+        response_format = request.args.get('format', 'json')
         if data:
-            return make_response(jsonify(data), 200)
+            if response_format == 'xml':
+                response = make_response(convert_to_xml(data), 200)
+                response.headers['Content-Type'] = 'application/xml'
+            else:
+                response = make_response(jsonify(data), 200)
+                response.headers['Content-Type'] = 'application/json'
         else:
-            return make_response(jsonify({"message": "Car not found"}), 404)
+            error_data = {"message": "Car not found"}
+            if response_format == 'xml':
+                response = make_response(convert_to_xml(error_data), 404)
+                response.headers['Content-Type'] = 'application/xml'
+            else:
+                response = make_response(jsonify(error_data), 404)
+                response.headers['Content-Type'] = 'application/json'
+        return response
     elif request.method == "PUT":
         car = request.json
         cur = mysql.connection.cursor()
@@ -58,16 +107,32 @@ def manage_car_by_id(id):
         )
         mysql.connection.commit()
         cur.close()
-        return make_response(jsonify({"message": "Car updated successfully"}), 200)
-    
+
+        response_data = {"message": "Car updated successfully"}
+        response_format = request.args.get('format', 'json')
+        if response_format == 'xml':
+            response = make_response(convert_to_xml(response_data), 200)
+            response.headers['Content-Type'] = 'application/xml'
+        else:
+            response = make_response(jsonify(response_data), 200)
+            response.headers['Content-Type'] = 'application/json'
+        return response
     elif request.method == "DELETE":
         cur = mysql.connection.cursor()
         query = "DELETE FROM cars WHERE car_id = %s;"
         cur.execute(query, (id,))
         mysql.connection.commit()
         cur.close()
-        return make_response(jsonify({"message": "Car deleted successfully"}), 200)
 
+        response_data = {"message": "Car deleted successfully"}
+        response_format = request.args.get('format', 'json')
+        if response_format == 'xml':
+            response = make_response(convert_to_xml(response_data), 200)
+            response.headers['Content-Type'] = 'application/xml'
+        else:
+            response = make_response(jsonify(response_data), 200)
+            response.headers['Content-Type'] = 'application/json'
+        return response
 
 if __name__ == "__main__":
     app.run(debug=True)
