@@ -31,7 +31,18 @@ def convert_to_xml(data):
 
 @app.route("/")
 def hello_world():
-    return "<p>Hello, World!</p>"
+    
+    style = """
+        <style>
+            p {
+                font-family: Arial, sans-serif;
+                font-size: 50px;
+                color: blue;
+                text-align: center;
+            }
+        </style>
+    """
+    return f"{style} <p>WELCOME TO ACE DATABASE</p>"
 
 @app.route("/cars", methods=["GET", "POST"])
 @auth.login_required
