@@ -37,7 +37,7 @@ def manage_cars():
         return make_response(jsonify({"message": "Car added successfully"}), 201)
 
 
-@app.route("/cars/<int:id>", methods=["GET", "PUT"])
+@app.route("/cars/<int:id>", methods=["GET", "PUT","DELETE"])
 def manage_car_by_id(id):
     if request.method == "GET":
         cur = mysql.connection.cursor()
@@ -59,6 +59,14 @@ def manage_car_by_id(id):
         mysql.connection.commit()
         cur.close()
         return make_response(jsonify({"message": "Car updated successfully"}), 200)
+    
+    elif request.method == "DELETE":
+        cur = mysql.connection.cursor()
+        query = "DELETE FROM cars WHERE car_id = %s;"
+        cur.execute(query, (id,))
+        mysql.connection.commit()
+        cur.close()
+        return make_response(jsonify({"message": "Car deleted successfully"}), 200)
 
 
 if __name__ == "__main__":
